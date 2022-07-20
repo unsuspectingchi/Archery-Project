@@ -7,9 +7,15 @@ public class PlayerController : MonoBehaviour
     private Animator animator;
     private bool isCrouching = false;
 
+    private AudioSource audioSource;
+    public AudioClip shootClip;
+    public AudioClip walkClip;
+    public AudioClip runClip;
+
     void Start()
     {
         animator = gameObject.GetComponent<Animator>();
+        audioSource = GetComponent<AudioSource>();
     }
 
     void Update()
@@ -60,11 +66,13 @@ public class PlayerController : MonoBehaviour
                 {
                     // Jump from crouch to shoot
                     animator.SetInteger("nShoot", 3);
+                    audioSource.PlayOneShot(shootClip, audioSource.volume);
                 }
                 else
                 {
                     // Shoot gangster style while standing
                     animator.SetInteger("nShoot", 2);
+                    audioSource.PlayOneShot(shootClip, audioSource.volume);
                 }
             }
             // Unshifted shooting styles
@@ -101,12 +109,17 @@ public class PlayerController : MonoBehaviour
             {
                 // Run normally
                 animator.SetInteger("nMove", 2);
+                if (!audioSource.isPlaying) {
+                    audioSource.Stop();
+                    audioSource.PlayOneShot(runClip, audioSource.volume);
+                }
             }
         }
         if (Input.GetKeyUp(KeyCode.R))
         {
             // Stop running
             animator.SetInteger("nMove", 0);
+            audioSource.Stop();
         }
 
         // Walking /////////////////////////////////////////////////////////////
@@ -114,11 +127,15 @@ public class PlayerController : MonoBehaviour
         {
             // Start walking
             animator.SetInteger("nMove", 1);
+            if (!audioSource.isPlaying) {
+                audioSource.PlayOneShot(walkClip, audioSource.volume);
+            }
         }
         if (Input.GetKeyUp(KeyCode.T))
         {
             // Stop walking
             animator.SetInteger("nMove", 0);
+            audioSource.Stop();
         }
 
 
