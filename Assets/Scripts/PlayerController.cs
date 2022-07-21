@@ -6,16 +6,23 @@ public class PlayerController : MonoBehaviour
 {
     private Animator animator;
     private bool isCrouching = false;
+    public string ARROW_PATH = "Prefabs/Arrow_Prefab";
 
     private AudioSource audioSource;
     public AudioClip shootClip;
     public AudioClip walkClip;
     public AudioClip runClip;
+    private GameObject arrowPrefab;
+    private Vector3 DEFAULT_ARROW_POSITION = new Vector3(500, 1, 502);
+
+    private bool isWalking = false;
+    private bool isRunning = false;
 
     void Start()
     {
         animator = gameObject.GetComponent<Animator>();
         audioSource = GetComponent<AudioSource>();
+        arrowPrefab = Resources.Load(ARROW_PATH) as GameObject;
     }
 
     void Update()
@@ -67,12 +74,16 @@ public class PlayerController : MonoBehaviour
                     // Jump from crouch to shoot
                     animator.SetInteger("nShoot", 3);
                     audioSource.PlayOneShot(shootClip, audioSource.volume);
+                    audioSource.clip = shootClip;
+                    Instantiate(arrowPrefab, DEFAULT_ARROW_POSITION, Quaternion.identity);
                 }
                 else
                 {
                     // Shoot gangster style while standing
                     animator.SetInteger("nShoot", 2);
                     audioSource.PlayOneShot(shootClip, audioSource.volume);
+                    audioSource.clip = shootClip;
+                    Instantiate(arrowPrefab, DEFAULT_ARROW_POSITION, Quaternion.identity);
                 }
             }
             // Unshifted shooting styles
@@ -104,22 +115,20 @@ public class PlayerController : MonoBehaviour
             {
                 // Run with bow ready
                 animator.SetInteger("nMove", 3);
+                isRunning = true;
             }
             else
             {
                 // Run normally
                 animator.SetInteger("nMove", 2);
-                if (!audioSource.isPlaying) {
-                    audioSource.Stop();
-                    audioSource.PlayOneShot(runClip, audioSource.volume);
-                }
+                isRunning = true;
             }
         }
         if (Input.GetKeyUp(KeyCode.R))
         {
             // Stop running
             animator.SetInteger("nMove", 0);
-            audioSource.Stop();
+            isRunning = false;
         }
 
         // Walking /////////////////////////////////////////////////////////////
@@ -127,15 +136,13 @@ public class PlayerController : MonoBehaviour
         {
             // Start walking
             animator.SetInteger("nMove", 1);
-            if (!audioSource.isPlaying) {
-                audioSource.PlayOneShot(walkClip, audioSource.volume);
-            }
+            isWalking = true;
         }
         if (Input.GetKeyUp(KeyCode.T))
         {
             // Stop walking
             animator.SetInteger("nMove", 0);
-            audioSource.Stop();
+            isWalking = false;
         }
 
 
@@ -161,12 +168,12 @@ public class PlayerController : MonoBehaviour
         }
 
         // Flipping ////////////////////////////////////////////////////////////
-        if (Input.GetKeyDown(KeyCode.F))
+        if (Input.GetKeyDown(KeyCode.J))
         {
             // Start flipping
             animator.SetInteger("nKnockDown", 3);
         }
-        if (Input.GetKeyUp(KeyCode.F))
+        if (Input.GetKeyUp(KeyCode.J))
         {
             // Stop flipping
             animator.SetInteger("nKnockDown", 0);
@@ -193,5 +200,29 @@ public class PlayerController : MonoBehaviour
             animator.SetInteger("nKnockDown", 0);
         }
 
+        //////////////////////////////// This is for audio because I realized the first version only worked for as 
+        // long as the audio played, not for how long the key was pressed
+
+        if (isWalking) {
+            if (!audioSource.isPlaying) { //if you are not playing audio
+                Debug.Log(audioSource.clip);
+                audioSource.PlayOneShot(walkClip, audioSource.volume);
+            } else if (audioSource.clip == runClip) { //if we are playing the run audio while walking-- useful if person holds down one key and switches to the next without letting go
+                audioSource.Stop();
+                audioSource.PlayOneShot(walkClip, audioSource.volume);
+            }
+            audioSource.clip = walkClip;
+        } else if (isRunning) {
+            if (!audioSource.isPlaying) {
+                Debug.Log(audioSource.clip);
+                audioSource.PlayOneShot(runClip, audioSource.volume);
+            } else if (audioSource.clip == walkClip) {
+                audioSource.Stop();
+                audioSource.PlayOneShot(runClip, audioSource.volume);
+            }
+            audioSource.clip = runClip;
+        } else if (!isRunning && !isWalking) {
+            audioSource.Stop(); //if not walking or running
+        }
     }
 }
