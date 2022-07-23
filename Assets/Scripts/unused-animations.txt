@@ -1,0 +1,45 @@
+// Run with bow ready
+animator.SetInteger("nMove", 3);
+isRunning = true;
+
+// Stunned /////////////////////////////////////////////////////////////
+if (Input.GetKeyDown(KeyCode.L))
+{
+    if (Input.GetKey(KeyCode.LeftShift) ||
+        Input.GetKey(KeyCode.RightShift))
+    {
+        // Stunned with head hung
+        animator.SetInteger("nStunned", 2);
+    }
+    else
+    {
+        // Stunned with head spinning
+        animator.SetInteger("nStunned", 1);
+    }
+}
+if (Input.GetKey(KeyCode.J))
+{
+    // Stop being stunned
+    animator.SetInteger("nStunned", 0);
+}
+
+// Knocked down ////////////////////////////////////////////////////////
+if (Input.GetKeyDown(KeyCode.K))
+{
+    if (Input.GetKey(KeyCode.LeftShift) ||
+        Input.GetKey(KeyCode.RightShift))
+    {
+        // Knocked down with spin
+        animator.SetInteger("nKnockDown", 2);
+    }
+    else
+    {
+        // Knocked down without spin
+        animator.SetInteger("nKnockDown", 1);
+    }
+}
+if (Input.GetKeyUp(KeyCode.K))
+{
+    // Stop being knocked down
+    animator.SetInteger("nKnockDown", 0);
+}
