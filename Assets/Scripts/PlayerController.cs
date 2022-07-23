@@ -12,6 +12,9 @@ public class PlayerController : MonoBehaviour
     public AudioClip shootClip;
     public AudioClip walkClip;
     public AudioClip runClip;
+    public AudioClip[] slashArray;
+
+
     private GameObject arrowPrefab;
     private Vector3 DEFAULT_ARROW_POSITION = new Vector3(500, 1, 502);
 
@@ -54,6 +57,8 @@ public class PlayerController : MonoBehaviour
             {
                 // Fight with knife
                 animator.SetInteger("nFight", 1);
+                audioSource.clip = slashArray[Random.Range(0, 4)];
+                audioSource.PlayOneShot(audioSource.clip, audioSource.volume);
             }
         }
         if (Input.GetKeyUp(KeyCode.F))
@@ -221,7 +226,7 @@ public class PlayerController : MonoBehaviour
                 audioSource.PlayOneShot(runClip, audioSource.volume);
             }
             audioSource.clip = runClip;
-        } else if (!isRunning && !isWalking) {
+        } else if (!isRunning && !isWalking && (audioSource.clip == runClip || audioSource.clip == walkClip)) {
             audioSource.Stop(); //if not walking or running
         }
     }
