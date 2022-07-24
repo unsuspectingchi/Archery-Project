@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
+  private const float FORWARD_VEL = 0.1f;
+  private const float ROTATION_VEL = 1f;
   private Animator animator;
 
   private AudioSource audioSource;
@@ -18,27 +20,75 @@ public class PlayerController : MonoBehaviour
   private bool isKicking = false;
   private bool isShooting = false;
   private bool isFlipping = false;
+  private Rigidbody rb;
+  private float rotationVel = 0;
+  private float moveDirection = 0;
+  private float rotDirection = 0;
+  private CameraController camScript;
+  private BowController bowScript;
+  private Camera cam;
+  public GameObject bow;
 
   void Start()
   {
     animator = gameObject.GetComponent<Animator>();
     audioSource = GetComponent<AudioSource>();
+    rb = GetComponent<Rigidbody>();
+    cam = Camera.main;
+    camScript = cam.GetComponent<CameraController>();
+    bowScript = bow.GetComponent<BowController>();
+  }
+
+  void FixedUpdate()
+  {
+    rb.MovePosition(transform.position + transform.forward * moveDirection * FORWARD_VEL);
+    rb.MoveRotation(rb.rotation * Quaternion.Euler(Vector3.up * rotDirection * ROTATION_VEL));
   }
 
   void Update()
   {
+    moveDirection = 0;
+    rotDirection = 0;
     // Default Behavior
     isWalking = false;
     isRunning = false;
     animator.SetInteger("nMove", 0);
 
+    // Shooting
+    if (Input.GetMouseButtonDown(0))
+    {
+      isShooting = true;
+      camScript.isShooting = true;
+      bowScript.isShooting = true;
+    }
+    if (Input.GetMouseButtonUp(0))
+    {
+      audioSource.clip = shootClip;
+      audioSource.PlayOneShot(audioSource.clip, audioSource.volume);
+    }
+
+    if (Input.GetMouseButtonDown(1))
+    {
+      if (!isShooting)
+      {
+        isShooting = true;
+        camScript.isShooting = true;
+        bowScript.isShooting = true;
+      }
+      else
+      {
+        StopShooting();
+      }
+    }
+
+
     // Flipping
     if (Input.GetKey(KeyCode.F) && !isShooting && !isKicking && !isKnifing)
     {
-      Debug.Log("Flipping!");
       // Start flipping
       isFlipping = true;
       animator.SetInteger("nKnockDown", 3);
+      StopShooting();
     }
     else
     {
@@ -50,7 +100,6 @@ public class PlayerController : MonoBehaviour
     // Crouching
     if (Input.GetKey(KeyCode.C) && !isShooting && !isKicking && !isKnifing)
     {
-      Debug.Log("Crouching!");
       // Start crouching
       animator.SetBool("isCrouching", true);
       isCrouching = true;
@@ -65,7 +114,7 @@ public class PlayerController : MonoBehaviour
     // Fighting with knife
     if (Input.GetKey(KeyCode.O))
     {
-      Debug.Log("Fighting with knife!");
+      StopShooting();
       // Fight with knife
       animator.SetInteger("nFight", 1);
       if (!isKnifing)
@@ -83,7 +132,7 @@ public class PlayerController : MonoBehaviour
     // Fighting with feet
     if (Input.GetKey(KeyCode.I))
     {
-      Debug.Log("Fighting with feet!");
+      StopShooting();
       // Fight with feet
       isKicking = true;
       animator.SetInteger("nFight", 2);
@@ -100,113 +149,64 @@ public class PlayerController : MonoBehaviour
       animator.SetInteger("nFight", 0);
     }
 
-    // Normal shooting
-    if (Input.GetKey(KeyCode.Space))
-    {
-      if (isCrouching && !isShooting)
-      {
-
-        // Shoot while crouching
-        animator.SetInteger("nShoot", 4);
-        isShooting = true;
-        // SHOOT HERE
-      }
-      else if (!isShooting)
-      {
-        {
-          // Short normally while standing
-          animator.SetInteger("nShoot", 1);
-          isShooting = true;
-          // SHOOT HERE
-        }
-      }
-    }
-    else
-    {
-      isShooting = false;
-    }
-
-    // Style shooting
-    if (Input.GetKey(KeyCode.P))
-    {
-      if (isCrouching)
-      {
-        Debug.Log("Not knifing!");
-        // Jump from crouch to shoot
-        if (!isShooting)
-        {
-          animator.SetInteger("nShoot", 3);
-          audioSource.PlayOneShot(shootClip, audioSource.volume);
-          audioSource.clip = shootClip;
-          // SHOOT HERE
-        }
-      }
-      else
-      {
-        if (!isShooting)
-        {
-          // Shoot gangster style while standing
-          animator.SetInteger("nShoot", 2);
-          audioSource.PlayOneShot(shootClip, audioSource.volume);
-          audioSource.clip = shootClip;
-          // SHOOT HERE
-        }
-      }
-      isShooting = true;
-    }
-    else
-    {
-      isShooting = false;
-    }
-
-    // Stop shooting
-    if (!isShooting)
-    {
-      animator.SetInteger("nShoot", 0);
-    }
-
     // Forward Movement
     if (Input.GetKey(KeyCode.W) && !isCrouching && !isKnifing && !isKicking)
     {
       if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
       {
-        Debug.Log("Running!");
         // Run forward
         animator.SetInteger("nMove", 2);
         isRunning = true;
+        moveDirection = 1.5f;
       }
       else
       {
-        Debug.Log("Walking forward!");
         // Walk forward
         animator.SetInteger("nMove", 1);
         isWalking = true;
+        moveDirection = 1;
       }
     }
 
     // Backward movement Left
     if (Input.GetKey(KeyCode.S) && !isWalking && !isRunning)
     {
-      Debug.Log("Walking backward!");
       // Walk left
       animator.SetInteger("nMove", 1);
       isWalking = true;
+      moveDirection = -1;
     }
 
     // Turning Left
     if (Input.GetKey(KeyCode.A))
     {
-      Debug.Log("Turning left!");
+      rotDirection = -1;
       // Turn left
-      // TODO
     }
 
     // Turning Right
     if (Input.GetKey(KeyCode.D))
     {
-      Debug.Log("Turning right!");
+      rotDirection = 1;
       // Turn right
-      // TODO
+    }
+
+    // Unity collision issues
+    if (rotDirection == 0 && moveDirection == 0)
+    {
+      rb.constraints = RigidbodyConstraints.FreezePosition | RigidbodyConstraints.FreezeRotation;
+    }
+    else if (moveDirection == 0)
+    {
+      rb.constraints = RigidbodyConstraints.FreezePosition | RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+    }
+    else if (rotDirection == 0)
+    {
+      rb.constraints = RigidbodyConstraints.FreezePositionY | RigidbodyConstraints.FreezeRotation;
+    }
+    else
+    {
+      rb.constraints = RigidbodyConstraints.FreezePositionY | RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
     }
 
 
@@ -241,5 +241,11 @@ public class PlayerController : MonoBehaviour
     {
       audioSource.Stop();
     }
+  }
+  void StopShooting()
+  {
+    isShooting = false;
+    bowScript.isShooting = false;
+    camScript.isShooting = false;
   }
 }
